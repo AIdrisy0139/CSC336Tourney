@@ -83,14 +83,24 @@ CREATE TABLE IF NOT EXISTS follows_tournament(
   FOREIGN KEY (user_id) REFERENCES users(id),
   FOREIGN KEY (tournament_id) REFERENCES tournament(id)
 );`;
-//Create Veiw
+//Create Veiw(s)
 const createViewFollowingTournaments = `
 CREATE VIEW viewFollowingTournaments AS 
 	SELECT tournament.id AS tourney_id, tournament_name, creator_name, sport_name, users.id AS user_id
 	FROM users JOIN follows_tournament ON users.id = follows_tournament.user_id 
-	JOIN tournament ON follows_tournament.tournament_id = tournament.id`;
-	
-	
+	JOIN tournament ON follows_tournament.tournament_id = tournament.id;`;
+
+const createViewGetTourneyMatches =`
+CREATE VIEW viewGetTourneyMatches AS
+	SELECT matches.*, T1.team_name AS home_team_name, T2.team_name AS visiting_team_name FROM matches
+	JOIN team T1 ON matches.home_team_id = T1.id
+	JOIN team T2 ON matches.visiting_team_id = T2.id;`;
+
+const createViewAwayTeamMatches =`
+CREATE VIEW viewAwayTeamMatches AS
+	SELECT *
+	FROM team JOIN matches ON team.id = matches.visiting_team_id
+`;
 //Stored Procs
 const insertUserProc = `
 CREATE PROCEDURE insertUserProc(
@@ -154,9 +164,17 @@ client.query(createMatchesTable, (err, res) => {
 client.query(createFollowsTournamentTable, (err, res) => {
   if (err) console.log(err.stack);
 });
+//Views
 client.query(createViewFollowingTournaments, (err, res) => {
   if (err) console.log(err.stack);
 });
+client.query(createViewGetTourneyMatches, (err, res) => {
+  if (err) console.log(err.stack);
+});
+client.query(createViewAwayTeamMatches, (err, res) => {
+  if (err) console.log(err.stack);
+});
+//Stored Procedures
 client.query(insertUserProc, (err, res) => {
   if (err) console.log(err.stack);
 });
@@ -199,10 +217,9 @@ SELECT users.id FROM users
 JOIN profiles ON users.id = profiles.user_id
 WHERE users.id = ?;`;
 const queryGetTourneyMatches = `
-SELECT matches.*, T1.team_name AS home_team_name, T2.team_name AS visiting_team_name FROM matches
-JOIN team T1 ON matches.home_team_id = T1.id
-JOIN team T2 ON matches.visiting_team_id = T2.id
-WHERE matches.tournament_id = ?;`;
+SELECT *
+FROM viewGetTourneyMatches
+WHERE tournament_id = ?;`;
 const queryGetTourneyName = `SELECT tournament_name FROM tournament WHERE tournament.id = ?;`;
 
 // Sample Database
