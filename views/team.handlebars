@@ -1,0 +1,19 @@
+<div id="team_table">
+  <div id="heading">
+    <div id="heading">
+      <h1>{{data.team_name}} vs:</h1>
+    </div>
+  </div>
+  <table>
+    <tr>
+      <th>Opposing Team</th>
+    </tr>
+    {{#each data.opposingTeams}}
+    <tr>
+      <td><a href="/team/{{home_team_id}}/{{visiting_team_id}}">{{visiting_team_name}}</a></td>
+    </tr>
+    {{/each}}
+  </table>
+</br>
+</br>
+</div>
