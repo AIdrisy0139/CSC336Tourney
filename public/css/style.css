@@ -1,0 +1,112 @@
+body {
+  margin: 1em;
+  font-family: "Lucida Sans Unicode", "Lucida Grande", sans-serif;
+}
+
+#login {
+  font-size: large;
+  margin-top: 7em;
+  padding: 1em;
+  display: flex;
+  justify-content: space-around;
+}
+
+#login form {
+  display: flex;
+  flex-flow: column;
+  align-items: center;
+  justify-content: center;
+  height: 25em;
+  width: 25em;
+  text-align: center;
+  border-style: solid;
+  border-width: medium;
+  border-color: #2E51A2;
+  border-radius: 1em;
+  color: #2E51A2;
+}
+
+input[type=submit] {
+  background: #2E51A2;
+  font-size: large;
+  color: white;
+  border-radius: 1em;
+  padding: 0.5em;
+}
+
+#heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+#nav {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: #2E51A2;
+}
+
+#nav li {
+  float: left;
+}
+
+#nav li a {
+  display: block;
+  font-size: large;
+  color: white;
+  text-align: center;
+  padding: 14px 16px;
+  text-decoration: none;
+}
+
+#nav #rightNav {
+  float: right;
+}
+
+.submission_form_div {
+  display: flex;
+  justify-content: center;
+  margin-top: 8em;
+}
+
+.submission_form {
+  display: flex;
+  flex-flow: column;
+  align-items: center;
+  justify-content: center;
+  height: 25em;
+  width: 25em;
+  text-align: center;
+  border-style: solid;
+  border-width: medium;
+  border-color: #2E51A2;
+  border-radius: 1em;
+  color: #2E51A2;
+}
+
+.submission_form div {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+#profile {
+  display: flex;
+  flex-flow: row;
+}
+
+#profile #main_info {
+  margin-left: 1em;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+table td, th {
+  border: 1px solid #dddddd;
+  text-align: left;
+  padding: 1em;
+}

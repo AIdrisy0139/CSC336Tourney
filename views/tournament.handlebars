@@ -1,0 +1,53 @@
+<div id="matches_table">
+  <div id="heading">
+    <div id="heading">
+      <h1>Matches in {{data.tourney_name}}</h1>
+    </div>
+  </div>
+  <table>
+    <tr>
+      <th>Home Team</th>
+      <th>Visiting Team</th>
+      <th>Home Team Score</th>
+      <th>Visiting Team Score</th>
+    </tr>
+    {{#each data.matches}}
+
+    <tr>
+      <td>{{home_team_name}}</td>
+      <td>{{visiting_team_name}}</td>
+      <td>{{home_team_score}}</td>
+      <td>{{visiting_team_score}}</td>
+    </tr>
+    {{/each}}
+
+  </table>
+
+</br>
+</br>
+
+<form action="/tournament/{{data.tournament_id}}/addmatch" method="post">
+  <table>
+    <tr>
+      <td>Home Team</td>
+      <td>
+        <input type="text" name="home_team_name" size="85">
+      </td>
+    </tr>
+    <tr>
+      <td>Visiting Team</td>
+      <td><input type="text" name="visiting_team_name" size="85"></td>
+    </tr>
+  </table>
+  <p>
+    <input type="submit" value="+ Add New Match" name="B1">
+  </p>
+</form>
+
+{{#each data.allTeams}}
+<ul>
+  <li>{{team_name}}</li>
+</ul>
+{{/each}}
+
+</div>

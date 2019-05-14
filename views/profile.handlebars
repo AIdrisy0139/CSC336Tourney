@@ -1,0 +1,34 @@
+<div id="heading">
+  <h1>{{data.userInfo.username}}'s Profile Page</h1>
+</div>
+<div id="profile">
+  <div id="sidebar">
+    <img src="{{data.userInfo.pfp_url}}" height="240" width="240"/>
+    <div>{{data.userInfo.username}}</div>
+    <div>{{data.userInfo.email}}</div>
+    <div>{{data.userInfo.interests}}</div>
+  </div>
+
+  <div id="main_info">
+    <div id="following">
+      <h2>Following Tournaments</h2>
+      <table>
+        <tr>
+          <th>Tournament Name</th>
+          <th>Hosted By</th>
+          <th>Sport </th>
+        </tr>
+        {{#each data.userTourneys}}
+
+            <tr>
+              <td><a href="/tournament/{{tourney_id}}">{{tournament_name}}</a></td>
+              <td>{{creator_name}}</td>
+              <td>{{sport_name}}</td>
+            </tr>
+        {{/each}}
+      </table>
+    </div>
+    <br>
+    <hr/>
+  </div>
+</div>

@@ -1,0 +1,31 @@
+<div id="tournaments_table">
+  <div id="heading">
+    <h1>All Tournaments</h1>
+    <form action="/create_new_tournament" method="get">
+      <input type="submit" value="+ Create New Tournament">
+    </form>
+  </div>
+  <table>
+    <tr>
+      <th>Tournament Name</th>
+      <th>Hosted By</th>
+      <th>Sport</th>
+      <th class="follow">Follow?</th>
+    </tr>
+    {{#each data.allTourneys}}
+
+    <tr>
+      <td><a href="/tournament/{{tourney_id}}">{{tournament_name}}</a></td>
+      <td>{{creator_name}}</td>
+      <td>{{sport_name}}</td>
+      <td class="follow">
+        <form action="/tournaments/follow_tournament" method="post">
+          <input type="hidden" name="tournament_id" value="{{tourney_id}}">
+          <input type="submit" value="✓">
+        </form>
+      </td>
+    </tr>
+
+    {{/each}}
+  </table>
+</div>

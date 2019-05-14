@@ -1,0 +1,19 @@
+<div id="login">
+  <form action="/login_user" method="post">
+      <h2>Login Existing User</h2>
+      <div>Username: <input type="text" name="loginUsername" required></div>
+      <div>Password: <input type="password" name="loginPassword" required></div>
+      <br/>
+      <input type="submit" value="Login">
+  </form>
+
+  <form action="/create_user" method="post">
+      <h2>Create New User</h2>
+      <div>Username: <input type="text" name="createUsername" required></div>
+      <div>Email: <input type="text" name="createEmail" required></div>
+      <div>Password: <input type="password" name="createPassword" required></div>
+      <br/>
+
+      <input type="submit" value="Create New User">
+  </form>
+</div>

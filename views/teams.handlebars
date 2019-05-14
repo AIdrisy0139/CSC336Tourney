@@ -1,0 +1,24 @@
+<div id="teams_table">
+  <div id="heading">
+    <h1>All Teams</h1>
+    <form action="/create_new_team" method="get">
+      <input type="submit" value="+ Create New Team">
+    </form>
+  </div>
+  <table>
+    <tr>
+      <th>Team Name</th>
+      <th>Sport</th>
+      <th>Wins</th>
+      <th>Losses</th>
+    </tr>
+    {{#each data.allTeams}}
+    <tr>
+      <td>{{team_name}}</td>
+      <td>{{sport_name}}</td>
+      <td>{{win_count}}</td>
+      <td>{{loss_count}}</td>
+    </tr>
+    {{/each}}
+  </table>
+</div>
