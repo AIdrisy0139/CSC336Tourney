@@ -85,7 +85,7 @@ CREATE TABLE IF NOT EXISTS follows_tournament(
 );`;
 //Create Veiw(s)
 const createViewFollowingTournaments = `
-CREATE VIEW viewFollowingTournaments AS 
+CREATE VIEW viewFollowingTournaments AS
 	SELECT tournament.id AS tourney_id, tournament_name, creator_name, sport_name, users.id AS user_id
 	FROM users JOIN follows_tournament ON users.id = follows_tournament.user_id 
 	JOIN tournament ON follows_tournament.tournament_id = tournament.id;`;
@@ -107,16 +107,16 @@ CREATE PROCEDURE insertUserProc(
 	newUsername VARCHAR(255),
 	newEmail VARCHAR(255),
 	newPassword VARCHAR (255))
-	INSERT INTO users(username,email,password) 
+	INSERT INTO users(username,email,password)
 	VALUES (newUsername,newEmail,newPassword);`;
-	
+
 const insertProfileProc = `
 CREATE PROCEDURE insertProfileProc(
 	newUserId INT,
 	newDisplayName VARCHAR(255),
 	newUrl VARCHAR(255),
 	newInterests VARCHAR(255))
-	INSERT INTO profiles(user_id, display_name, pfp_url, interests) 
+	INSERT INTO profiles(user_id, display_name, pfp_url, interests)
 	VALUES(newUserId, newDisplayName,newUrl,newInterests);
 `;
 const insertTourneyProc = `
@@ -134,7 +134,7 @@ CREATE PROCEDURE insertTeamProc(
 	INSERT INTO team(team_name,sport_name)
 	VALUES(newTeamName,newSportName);
 `;
-	
+
 // Querying the database using built-in method from connection object
 // Query method takes sql statement as parameter (which we defined as constants above)
 client.query(dropDatabase, (err, res) => {
@@ -208,6 +208,7 @@ const queryProfilePage = `SELECT * from users JOIN profiles on profiles.user_id 
 const queryAllTournaments = `SELECT tournament.id AS tourney_id, tournament_name, creator_name, sport_name FROM tournament;`;
 const queryAllTeams = `SELECT * FROM team;`;
 const queryTeamID = `SELECT team.id FROM team WHERE team.team_name = ?;`;
+const queryTeamName =  `SELECT team_name FROM team WHERE team.id = ?;`;
 const queryFollowingTournaments = `
 	SELECT *
 	FROM viewFollowingTournaments
@@ -221,6 +222,10 @@ SELECT *
 FROM viewGetTourneyMatches
 WHERE tournament_id = ?;`;
 const queryGetTourneyName = `SELECT tournament_name FROM tournament WHERE tournament.id = ?;`;
+const queryGetOpposingTeams = `
+SELECT home_team_id, visiting_team_id, team_name AS visiting_team_name FROM matches
+JOIN team ON matches.visiting_team_id = team.id
+WHERE matches.home_team_id = ?;`;
 
 // Sample Database
 const querySampleUsers = `
@@ -478,11 +483,12 @@ app.get('/profile/:id', async (req, res) => {
       var rows2 = results2;
       data.userTourneys = rows2;
       res.render('profile', {data});
-	  
+
     });
   });
 });
 
+// Load current tournaments
 app.get('/tournaments', async (req, res) => {
   var data = {};
   await client.query(queryAllTournaments, async (err, results) => {
@@ -492,6 +498,7 @@ app.get('/tournaments', async (req, res) => {
   })
 });
 
+// Load matches for tournament specified by id
 app.get('/tournament/:id', async (req, res) => {
   const tourney_id = req.params.id;
   var data = {};
@@ -508,6 +515,7 @@ app.get('/tournament/:id', async (req, res) => {
   });
 });
 
+// Form to add match to current tournament
 app.post('/tournament/:id/addmatch', async (req, res) => {
   var data = {};
   const tourney_id = req.params.id;
@@ -524,6 +532,7 @@ app.post('/tournament/:id/addmatch', async (req, res) => {
   });
 });
 
+// Post request for current user to follow tournament
 app.post('/tournaments/follow_tournament', async (req, res) => {
   const tourney_id = req.body.tournament_id;
   const userId = app.get('userId');
@@ -532,10 +541,12 @@ app.post('/tournaments/follow_tournament', async (req, res) => {
   });
 });
 
+// Load create new tournament page (with form)
 app.get('/create_new_tournament', async (req, res) => {
   res.render('create_new_tournament');
 });
 
+// Post request to create new tournament and redirect to all tournaments page
 app.post('/create_new_tournament', async (req, res) => {
   const creator_name = app.get('username');
   const tournament_name = req.body.tournament_name;
@@ -545,18 +556,52 @@ app.post('/create_new_tournament', async (req, res) => {
   });
 });
 
+// Load all teams page
 app.get('/teams', async (req, res) => {
   var data = {};
   await client.query(queryAllTeams, async (err, results) => {
     data.allTeams = results;
     res.render('teams', {data});
-  })
+  });
 });
 
+// Load team profile page (shows all teams played against)
+app.get('/team/:id', async (req, res) => {
+  const team_id = req.params.id;
+  var data = {};
+  data.team_id = team_id;
+  await client.query(queryTeamName, [team_id], async (err, results) => {
+    data.team_name = results[0].team_name;
+    await client.query(queryGetOpposingTeams, [team_id], async (err, results) => {
+      data.opposingTeams = results;
+      res.render('team', {data});
+    });
+  });
+});
+
+// Load team vs page (shows total wins and losses against teams specified by id and id2)
+app.get('/team/:id/:id2', async (req, res) => {
+  const team_id = req.params.id;
+  const visiting_team_id = req.params.id2;
+  var data = {};
+  data.team_id = team_id;
+  data.visiting_team_id = visiting_team_id;
+  await client.query(queryTeamName, [team_id], async(err, results) => {
+    data.home_team_name = results[0].team_name;
+    await client.query(queryTeamName, [visiting_team_id], async(err, results2) => {
+      data.visiting_team_name = results2[0].team_name;
+      res.render('vs', {data});
+      // RUN FUNCTION HERE
+    });
+  });
+});
+
+// Load create new team page (with form)
 app.get('/create_new_team', async (req, res) => {
   res.render('create_new_team');
 });
 
+// Post request to create new team
 app.post('/create_new_team', async (req, res) => {
   const team_name = req.body.team_name;
   const sport_name = req.body.sport_name;
