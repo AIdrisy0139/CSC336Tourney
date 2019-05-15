@@ -152,18 +152,50 @@ const insertMatchesProc = `
 `;
 //Functions
 const funcAwayMatchesWon = `
-CREATE FUNCTION awayMatchesWon (teamId INT) RETURNS INT
-	SELECT COUNT(*) 
-	FROM viewAwayTeamMatches 
-	WHERE visiting_team_id = teamId AND (visiting_team_score > home_team_score);
+DELIMITER //
+CREATE FUNCTION awayMatchesWon (teamId INT) RETURNS INT 
+BEGIN
+	DECLARE result INT;
+	SET result = 0;
+	SELECT COUNT(*) INTO result
+	FROM viewAwayTeamMatches
+	WHERE awayTeamId = teamId AND visiting_team_score > home_team_score;
+	RETURN result;
+END
+//
+DELIMITER ;
 `;
 
-const funcTeamHomeWinsAgainst = `
-CREATE FUNCTION teamHomeWinsAgainst (arghometeamid INT, argawayteamid INT) RETURNS int
-	SELECT COUNT(home_team_id)
+const func1 = `
+DELIMITER //`;
+const func2=`
+CREATE FUNCTION teamHomeWinsAgainst(arghometeamid INT, argawayteamid INT) RETURNS INT 
+BEGIN
+	DECLARE result INT;
+	SET result = 0;
+	SELECT COUNT(home_team_id) INTO result
 	FROM matches
 	WHERE home_team_id = arghometeamid AND visiting_team_id = argawayteamid AND home_team_score > visiting_team_score;
-	`;
+	RETURN result;
+END
+//
+`;
+const func3=`DELIMITER ;`;
+
+const funcAll = `
+DELIMITER //
+CREATE FUNCTION teamHomeWinsAgainst(arghometeamid INT, argawayteamid INT) RETURNS INT 
+BEGIN
+	DECLARE result INT;
+	SET result = 0;
+	SELECT COUNT(home_team_id) INTO result
+	FROM matches
+	WHERE home_team_id = arghometeamid AND visiting_team_id = argawayteamid AND home_team_score > visiting_team_score;
+	RETURN result;
+END
+//
+DELIMITER ;`;
+
 // Querying the database using built-in method from connection object
 // Query method takes sql statement as parameter (which we defined as constants above)
 client.query(dropDatabase, (err, res) => {
@@ -218,11 +250,15 @@ client.query(insertTeamProc, (err, res) => {
 });
 client.query(insertFollowsTournament, (err, res) => {
   if (err) console.log(err.stack);
+});
 client.query(insertMatchesProc, (err, res) => {
   if (err) console.log(err.stack);
 });
 //Functions
+client.query(funcAll, (err, res) => {
+  if (err) console.log(err.stack);
 });
+
 // Inserts
 const queryInsertUser = ` CALL insertUserProc(?,?,?);`;
 // = insertUserProc(?,?,?)
@@ -626,9 +662,13 @@ app.get('/team/:id/:id2', async (req, res) => {
     data.home_team_name = results[0].team_name;
     await client.query(queryTeamName, [visiting_team_id], async(err, results2) => {
       data.visiting_team_name = results2[0].team_name;
-      res.render('vs', {data});
+	  res.render('vs', {data});
       // RUN FUNCTION HERE
-    });
+		await client.query(`teamHomeWinsAgainst(?,?);`,[team_id,visiting_team_id], async(err,results3)=>{
+			data.wins = results3[0].wins;
+		});
+	});
+		
   });
 });
 
