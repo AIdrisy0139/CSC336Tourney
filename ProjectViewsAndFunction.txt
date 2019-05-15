@@ -46,8 +46,28 @@ CREATE PROCEDURE insertTeamProc(
 	INSERT INTO team(team_name,sport_name)
 	VALUES(newTeamName,newSportName);
 	
+CREATE PROCEDURE insertFollowsTournament(
+	newUID INT,
+	newTID INT,)
+	INSERT INTO follows_tournament(user_id,tournament_id)
+	VALUES (newUID,newTID);
+	
+CREATE PROCEDURE insertMatchesProc(
+	newTournamentId int,
+	newHomeTeamId int,
+	newVisitingTeamId int)
+	INSERT INTO matches(tournament_id,home_team_id,visiting_team_id)
+	VALUES(newTournamentId,newHomeTeamId,newVisitingTeamId);
+	
+CREATE FUNCTION awayMatchesWon (teamId INT) RETURNS int
+	SELECT COUNT(*) 
+	FROM viewAwayTeamMatches 
+	WHERE matches.awayTeamId = teamId AND matches.visiting_team_score > matches.home_team_score;
 
-
+CREATE FUNCTION teamHomeWinsAgainst (arghometeamid INT, argawayteamid INT) RETURNS int
+	SELECT COUNT(home_team_id)
+	FROM matches
+	WHERE home_team_id = arghometeamid AND visiting_team_id = argawayteamid AND home_team_score > visiting_team_score;
 
 --TEST
 SELECT home_team_id,visiting_team_id, home_team_score > visiting_team_score

@@ -134,7 +134,36 @@ CREATE PROCEDURE insertTeamProc(
 	INSERT INTO team(team_name,sport_name)
 	VALUES(newTeamName,newSportName);
 `;
+const insertFollowsTournament =`
+CREATE PROCEDURE insertFollowsTournament(
+	newUID INT,
+	newTID INT)
+	INSERT INTO follows_tournament(user_id,tournament_id)
+	VALUES (newUID,newTID);
+`;
 
+const insertMatchesProc = `
+	CREATE PROCEDURE insertMatchesProc(
+	newTournamentId int,
+	newHomeTeamId int,
+	newVisitingTeamId int)
+	INSERT INTO matches(tournament_id,home_team_id,visiting_team_id)
+	VALUES(newTournamentId,newHomeTeamId,newVisitingTeamId);
+`;
+//Functions
+const funcAwayMatchesWon = `
+CREATE FUNCTION awayMatchesWon (teamId INT) RETURNS INT
+	SELECT COUNT(*) 
+	FROM viewAwayTeamMatches 
+	WHERE visiting_team_id = teamId AND (visiting_team_score > home_team_score);
+`;
+
+const funcTeamHomeWinsAgainst = `
+CREATE FUNCTION teamHomeWinsAgainst (arghometeamid INT, argawayteamid INT) RETURNS int
+	SELECT COUNT(home_team_id)
+	FROM matches
+	WHERE home_team_id = arghometeamid AND visiting_team_id = argawayteamid AND home_team_score > visiting_team_score;
+	`;
 // Querying the database using built-in method from connection object
 // Query method takes sql statement as parameter (which we defined as constants above)
 client.query(dropDatabase, (err, res) => {
@@ -187,7 +216,13 @@ client.query(insertTourneyProc, (err, res) => {
 client.query(insertTeamProc, (err, res) => {
   if (err) console.log(err.stack);
 });
-
+client.query(insertFollowsTournament, (err, res) => {
+  if (err) console.log(err.stack);
+client.query(insertMatchesProc, (err, res) => {
+  if (err) console.log(err.stack);
+});
+//Functions
+});
 // Inserts
 const queryInsertUser = ` CALL insertUserProc(?,?,?);`;
 // = insertUserProc(?,?,?)
@@ -198,9 +233,10 @@ const queryCreateTournament = `CALL insertTourneyProc(?,?,?);`;
 //INSERT INTO tournament(creator_name, tournament_name, sport_name) VALUES(?,?,?)
 const queryCreateTeam = `CALL insertTeamProc(?,?)`;
 //INSERT INTO team(team_name, sport_name) VALUES (?,?)
-const queryFollowTourney = `INSERT INTO follows_tournament(user_id, tournament_id) VALUES(?,?);`;
-const queryAddMatch = `INSERT INTO matches(tournament_id, home_team_id, visiting_team_id) VALUES(?,?,?);`;
-
+const queryFollowTourney = `CALL insertFollowsTournament(?,?)`;
+//INSERT INTO follows_tournament(user_id, tournament_id) VALUES(?,?);
+const queryAddMatch = `CALL insertMatchesProc(?,?,?)`;
+//INSERT INTO matches(tournament_id, home_team_id, visiting_team_id) VALUES(?,?,?);
 // Selects
 const queryLoginUser = `SELECT * FROM users WHERE username = ? AND password = ?`;
 const queryUserID = `SELECT id from users WHERE username = ?;`;
