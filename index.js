@@ -13,7 +13,7 @@ app.use(express.static(path.join(__dirname, '/public'))); // Access css file
 
 // Set database connection credentials
 const client = mysql.createConnection({
-  host: 'localhost',
+  host:   '127.0.0.1',
   user: 'root',
   password: 'password',
   port: 3306
@@ -31,6 +31,7 @@ client.connect((err) => {
 const dropDatabase = `DROP DATABASE IF EXISTS tournamentDatabase;`;
 const createDatabase = `CREATE DATABASE IF NOT EXISTS tournamentDatabase;`;
 const useDatabase = `USE tournamentDatabase;`;
+const changeConfig = `SET GLOBAL log_bin_trust_function_creators = 1;`;
 
 // Create tables
 const createUsersTable = `
@@ -83,24 +84,25 @@ CREATE TABLE IF NOT EXISTS follows_tournament(
   FOREIGN KEY (user_id) REFERENCES users(id),
   FOREIGN KEY (tournament_id) REFERENCES tournament(id)
 );`;
+
 //Create Veiw(s)
 const createViewFollowingTournaments = `
 CREATE VIEW viewFollowingTournaments AS
 	SELECT tournament.id AS tourney_id, tournament_name, creator_name, sport_name, users.id AS user_id
-	FROM users JOIN follows_tournament ON users.id = follows_tournament.user_id 
+	FROM users JOIN follows_tournament ON users.id = follows_tournament.user_id
 	JOIN tournament ON follows_tournament.tournament_id = tournament.id;`;
 
-const createViewGetTourneyMatches =`
+const createViewGetTourneyMatches = `
 CREATE VIEW viewGetTourneyMatches AS
 	SELECT matches.*, T1.team_name AS home_team_name, T2.team_name AS visiting_team_name FROM matches
 	JOIN team T1 ON matches.home_team_id = T1.id
 	JOIN team T2 ON matches.visiting_team_id = T2.id;`;
 
-const createViewAwayTeamMatches =`
+const createViewAwayTeamMatches = `
 CREATE VIEW viewAwayTeamMatches AS
 	SELECT *
-	FROM team JOIN matches ON team.id = matches.visiting_team_id
-`;
+	FROM team JOIN matches ON team.id = matches.visiting_team_id;`;
+
 //Stored Procs
 const insertUserProc = `
 CREATE PROCEDURE insertUserProc(
@@ -117,30 +119,29 @@ CREATE PROCEDURE insertProfileProc(
 	newUrl VARCHAR(255),
 	newInterests VARCHAR(255))
 	INSERT INTO profiles(user_id, display_name, pfp_url, interests)
-	VALUES(newUserId, newDisplayName,newUrl,newInterests);
-`;
+	VALUES(newUserId, newDisplayName,newUrl,newInterests);`;
+
 const insertTourneyProc = `
 CREATE PROCEDURE insertTourneyProc(
 	newCreateName VARCHAR(255),
 	newTourneyName VARCHAR(255),
 	newSportName VARCHAR(255))
 	INSERT INTO tournament(creator_name,tournament_name, sport_name)
-	VALUES(newCreateName,newTourneyName,newSportName)
-`;
+	VALUES(newCreateName,newTourneyName,newSportName);`;
+
 const insertTeamProc = `
 CREATE PROCEDURE insertTeamProc(
 	newTeamName VARCHAR(255),
 	newSportName VARCHAR(255))
 	INSERT INTO team(team_name,sport_name)
-	VALUES(newTeamName,newSportName);
-`;
+	VALUES(newTeamName,newSportName);`;
+
 const insertFollowsTournament =`
 CREATE PROCEDURE insertFollowsTournament(
 	newUID INT,
 	newTID INT)
 	INSERT INTO follows_tournament(user_id,tournament_id)
-	VALUES (newUID,newTID);
-`;
+	VALUES (newUID,newTID);`;
 
 const insertMatchesProc = `
 	CREATE PROCEDURE insertMatchesProc(
@@ -148,53 +149,37 @@ const insertMatchesProc = `
 	newHomeTeamId int,
 	newVisitingTeamId int)
 	INSERT INTO matches(tournament_id,home_team_id,visiting_team_id)
-	VALUES(newTournamentId,newHomeTeamId,newVisitingTeamId);
-`;
+	VALUES(newTournamentId,newHomeTeamId,newVisitingTeamId);`;
+
 //Functions
 const funcAwayMatchesWon = `
-DELIMITER //
-CREATE FUNCTION awayMatchesWon (teamId INT) RETURNS INT 
+CREATE FUNCTION awayMatchesWon(teamId INT) RETURNS INT
 BEGIN
 	DECLARE result INT;
 	SET result = 0;
 	SELECT COUNT(*) INTO result
 	FROM viewAwayTeamMatches
-	WHERE awayTeamId = teamId AND visiting_team_score > home_team_score;
+	WHERE visiting_team_id = teamId AND visiting_team_score > home_team_score;
 	RETURN result;
-END
-//
-DELIMITER ;
-`;
+END;`;
 
-const func1 = `
-DELIMITER //`;
-const func2=`
-CREATE FUNCTION teamHomeWinsAgainst(arghometeamid INT, argawayteamid INT) RETURNS INT 
+
+const funcTeamHomeWinsAgainst = `
+CREATE FUNCTION teamHomeWinsAgainst(arg_home_team_id INT, arg_away_team_id INT) RETURNS INT
 BEGIN
 	DECLARE result INT;
 	SET result = 0;
-	SELECT COUNT(home_team_id) INTO result
+	SELECT COUNT(*) INTO result
 	FROM matches
-	WHERE home_team_id = arghometeamid AND visiting_team_id = argawayteamid AND home_team_score > visiting_team_score;
+	WHERE home_team_id = arg_home_team_id AND visiting_team_id = arg_away_team_id AND home_team_score > visiting_team_score;
 	RETURN result;
-END
-//
-`;
-const func3=`DELIMITER ;`;
+END;`;
 
-const funcAll = `
-DELIMITER //
-CREATE FUNCTION teamHomeWinsAgainst(arghometeamid INT, argawayteamid INT) RETURNS INT 
-BEGIN
-	DECLARE result INT;
-	SET result = 0;
-	SELECT COUNT(home_team_id) INTO result
-	FROM matches
-	WHERE home_team_id = arghometeamid AND visiting_team_id = argawayteamid AND home_team_score > visiting_team_score;
-	RETURN result;
-END
-//
-DELIMITER ;`;
+const selectAwayMatchesWon = `
+SELECT awayMatchesWon(?) as numWins;`;
+
+const selectHomeWinsAgainst = `
+SELECT teamHomeWinsAgainst(?, ?) as homeWins;`;
 
 // Querying the database using built-in method from connection object
 // Query method takes sql statement as parameter (which we defined as constants above)
@@ -205,6 +190,9 @@ client.query(createDatabase, (err, res) => {
   if (err) console.log(err.stack);
 });
 client.query(useDatabase, (err, res) => {
+  if (err) console.log(err.stack);
+});
+client.query(changeConfig, (err, res) => {
   if (err) console.log(err.stack);
 });
 client.query(createUsersTable, (err, res) => {
@@ -255,9 +243,12 @@ client.query(insertMatchesProc, (err, res) => {
   if (err) console.log(err.stack);
 });
 //Functions
-client.query(funcAll, (err, res) => {
+client.query(funcTeamHomeWinsAgainst, (err, res) => {
   if (err) console.log(err.stack);
 });
+client.query(funcAwayMatchesWon, (err, res) => {
+  if (err) console.log(err.stack);
+})
 
 // Inserts
 const queryInsertUser = ` CALL insertUserProc(?,?,?);`;
@@ -294,10 +285,14 @@ SELECT *
 FROM viewGetTourneyMatches
 WHERE tournament_id = ?;`;
 const queryGetTourneyName = `SELECT tournament_name FROM tournament WHERE tournament.id = ?;`;
-const queryGetOpposingTeams = `
+const queryGetHomeGames = `
 SELECT home_team_id, visiting_team_id, team_name AS visiting_team_name FROM matches
 JOIN team ON matches.visiting_team_id = team.id
 WHERE matches.home_team_id = ?;`;
+const queryGetAwayGames = `
+SELECT home_team_id, visiting_team_id, team_name AS home_team_name FROM matches
+JOIN team ON matches.home_team_id = team.id
+WHERE matches.visiting_team_id = ?;`;
 
 // Sample Database
 const querySampleUsers = `
@@ -367,19 +362,19 @@ INSERT INTO team (id, team_name, sport_name, win_count, loss_count) VALUES
 (NULL, 'Oklahoma City Thunder', 'Basketball', '145', '123'),
 (NULL, 'Miami Heat', 'Basketball', '123', '142');`;
 
-// For Obama's White House Basketball Tourney
-const querySampleMatches1 = `
-INSERT INTO matches (match_id, tournament_id, home_team_id, visiting_team_id, home_team_score, visiting_team_score) VALUES
-(NULL, '6', '15', '14', '78', '89'),
-(NULL, '6', '1', '2', '99', '91'),
-(NULL, '6', '13', '15', '92', '94'),
-(NULL, '6', '15', '12', '82', '78'),
-(NULL, '6', '15', '2', '145', '152'),
-(NULL, '6', '15', '1', '82', '67'),
-(NULL, '6', '14', '15', '80', '90'),
-(NULL, '6', '14', '13', '71', '82'),
-(NULL, '6', '14', '12', '92', '101'),
-(NULL, '6', '2', '12', '103', '105');`;
+// // For Obama's White House Basketball Tourney
+// const querySampleMatches1 = `
+// INSERT INTO matches (match_id, tournament_id, home_team_id, visiting_team_id, home_team_score, visiting_team_score) VALUES
+// (NULL, '6', '15', '14', '78', '89'),
+// (NULL, '6', '1', '2', '99', '91'),
+// (NULL, '6', '13', '15', '92', '94'),
+// (NULL, '6', '15', '12', '82', '78'),
+// (NULL, '6', '15', '2', '145', '152'),
+// (NULL, '6', '15', '1', '82', '67'),
+// (NULL, '6', '14', '15', '80', '90'),
+// (NULL, '6', '14', '13', '71', '82'),
+// (NULL, '6', '14', '12', '92', '101'),
+// (NULL, '6', '2', '12', '103', '105');`;
 
 // For the NBA
 const querySampleMatches2 = `
@@ -439,7 +434,7 @@ INSERT INTO follows_tournament (user_id, tournament_id) VALUES
 ('13', '8');`;
 
 var sampleDatabase = [querySampleUsers, querySampleTournaments, querySampleProfiles, querySampleTeams, querySampleFollowsTournament];
-var sampleMatches = [querySampleMatches1, querySampleMatches2, querySampleMatches3, querySampleMatches4];
+var sampleMatches = [querySampleMatches2, querySampleMatches3, querySampleMatches4];
 var i;
 
 // Set to false if you want an empty database
@@ -457,9 +452,6 @@ if (runSampleDatabase) {
     });
   }
 }
-
-
-
 
 // Routing
 app.get('/', (req, res) => {
@@ -644,9 +636,15 @@ app.get('/team/:id', async (req, res) => {
   data.team_id = team_id;
   await client.query(queryTeamName, [team_id], async (err, results) => {
     data.team_name = results[0].team_name;
-    await client.query(queryGetOpposingTeams, [team_id], async (err, results) => {
-      data.opposingTeams = results;
-      res.render('team', {data});
+    await client.query(queryGetHomeGames, [team_id], async (err, results2) => {
+      data.homeGames = results2;
+      await client.query(queryGetAwayGames, [team_id], async (err, results3) => {
+        data.awayGames = results3;
+        await client.query(selectAwayMatchesWon, [team_id], async (err, results4) => {
+          data.awayWins = results4[0].numWins;
+          res.render('team', {data});
+        });
+      });
     });
   });
 });
@@ -662,13 +660,11 @@ app.get('/team/:id/:id2', async (req, res) => {
     data.home_team_name = results[0].team_name;
     await client.query(queryTeamName, [visiting_team_id], async(err, results2) => {
       data.visiting_team_name = results2[0].team_name;
-	  res.render('vs', {data});
-      // RUN FUNCTION HERE
-		await client.query(`teamHomeWinsAgainst(?,?);`,[team_id,visiting_team_id], async(err,results3)=>{
-			data.wins = results3[0].wins;
-		});
-	});
-		
+      await client.query(selectHomeWinsAgainst, [team_id, visiting_team_id], async(err, results3) => {
+        data.homeWins = results3[0].homeWins;
+        res.render('vs', {data});
+      });
+    });
   });
 });
 

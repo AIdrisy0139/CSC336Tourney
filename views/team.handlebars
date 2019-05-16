@@ -1,19 +1,38 @@
 <div id="team_table">
   <div id="heading">
     <div id="heading">
-      <h1>{{data.team_name}} vs:</h1>
+      <h1>{{data.team_name}} Home Games</h1>
     </div>
   </div>
   <table>
     <tr>
       <th>Opposing Team</th>
     </tr>
-    {{#each data.opposingTeams}}
+    {{#each data.homeGames}}
     <tr>
       <td><a href="/team/{{home_team_id}}/{{visiting_team_id}}">{{visiting_team_name}}</a></td>
     </tr>
     {{/each}}
   </table>
+
+  <div id="heading">
+    <div id="heading">
+      <h1>{{data.team_name}} Away Games</h1>
+    </div>
+  </div>
+  <table>
+    <tr>
+      <th>Opposing Team</th>
+    </tr>
+    {{#each data.awayGames}}
+    <tr>
+      <td><a href="/team/{{home_team_id}}/{{visiting_team_id}}">{{home_team_name}}</a></td>
+    </tr>
+    {{/each}}
+  </table>
+
+
+  <h1>{{data.team_name}} has {{data.awayWins}} total away win(s).</h1>
 </br>
 </br>
 </div>
